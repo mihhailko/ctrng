@@ -184,7 +184,7 @@
                                    (enemy? game x-right-diag player))
                               (if (= mode :normal) [x x-right-diag] [x-right-diag])
                               :else
-                              (if (= mode :normal) [x] [])))
+                              (if (and (= mode :normal) (not (or (own? game x player) (enemy? game x player)))) [x] [])))
         :else nil)
       nil)))
 
