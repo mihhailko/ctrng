@@ -243,10 +243,38 @@
   (if (empty? pot-moves)
     acc
     (recur game player (next pot-moves) (conj acc (test-move game player (first pot-moves))))))
-  
-(defn- checkmate? [game player]
+
+(defn- own-pieces-coords [game player]
+  (let [own-pieces (filter #(own? game % player) (keys game))]
+    (seq (disj (set own-pieces) (own-king game player)))))
+
+(defn- remove-if-enemy [game coord player]
+  (if (enemy? game coord player)
+    (assoc game coord {:pawn true player true})
+    game))
+
+(defn- put-pawn [game coord player]
+    (assoc game coord {:pawn true player true}))
+
+(defn- maybe-checkmate? [game player]
   (or (and (under-check? game player) (empty? (potential-moves game player (own-king game player))))
       (and (under-check? game player) (every? nil? (run-test-moves game player (potential-moves game player (own-king game player)) [])))))
+
+(defn- seriously-checkmate? [game player]
+  (let [res (set (map #(maybe-checkmate? % player)
+                      (map #(put-pawn game % player)
+                           (flatten (map #(potential-moves game player %)
+                                         (own-pieces-coords game player))))))]
+    (if (contains? res nil)
+      nil
+      true)))
+
+(defn- checkmate? [game player]
+  (if
+      (or (and (under-check? game player) (empty? (potential-moves game player (own-king game player))))
+          (and (under-check? game player) (every? nil? (run-test-moves game player (potential-moves game player (own-king game player)) []))))
+    (seriously-checkmate? game player)
+    nil))
 
 (defn- pawn? [piece]
   (piece :pawn))
